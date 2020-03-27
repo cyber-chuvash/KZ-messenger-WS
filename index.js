@@ -1,18 +1,13 @@
 const WebSocket = require('ws');
 const Redis = require('ioredis');
+const config = require('config');
 
-const redis = new Redis({
-    port: 6379, // Redis port
-    host: "127.0.0.1", // Redis host
-    // family: 4, // 4 (IPv4) or 6 (IPv6)
-    // password: "auth",
-    // db: 0
-});
+const redisConfig = config.get('redisConfig');
+const WSSConfig = config.get('WSSConfig');
 
-const wss = new WebSocket.Server({
-    host: '127.0.0.1',
-    port: 8080,
-}, (event) => {
+const redis = new Redis(redisConfig);
+
+const wss = new WebSocket.Server(WSSConfig, (event) => {
     console.log('WebSocket server started listening')
 });
 

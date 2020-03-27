@@ -1,0 +1,11 @@
+**/bin
+
+**/node_modules
+**/.DS_Store
+**/.git
+**/.idea
+
+.dockerignore
+.gitignore
+.gitlab-ci.yml
+Dockerfile
