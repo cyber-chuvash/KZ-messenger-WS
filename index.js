@@ -39,9 +39,10 @@ wss.on('connection', (socket, request) => {
     }
 
     const handleMessage = (channel, message) => {
-        // TODO fix check for recepientID
-        console.debug("Receive message %s from channel %s", message, channel);
-        socket.send(message);
+        if (channel === recipientId) {
+            console.debug("Receive message %s from channel %s", message, channel);
+            socket.send(message);
+        }
     };
 
     redis.on("message", handleMessage);
