@@ -11,7 +11,7 @@ const wss = new WebSocket.Server(WSSConfig, (event) => {
     console.log('WebSocket server started listening')
 });
 
-// Store the number of listeners for each recepientId,
+// Store the number of listeners for each recipientId,
 // in order to unsub from the channel when there's no listeners left on it
 const listenerCounts = {};
 
