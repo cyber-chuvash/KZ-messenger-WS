@@ -32,10 +32,12 @@ wss.on('connection', (socket, request) => {
         }
     });
 
-    redis.on("message", (channel, message) => {
+    const handleMessage = (channel, message) => {
         console.log("Receive message %s from channel %s", message, channel);
         socket.send(message);
-    });
+    };
+
+    redis.on("message", handleMessage);
 
     socket.on('message', (data) => {
         // TODO handle
@@ -50,6 +52,7 @@ wss.on('connection', (socket, request) => {
     socket.on('close', (code, reason) => {
         // TODO handle
         console.log(`Connection closed: [${code}] ${reason}`);
+        redis.removeListener('message', handleMessage);
         redis.unsubscribe(recipientId);
     })
 
