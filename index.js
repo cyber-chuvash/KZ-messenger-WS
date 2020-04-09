@@ -11,6 +11,10 @@ const wss = new WebSocket.Server(WSSConfig, (event) => {
     console.log('WebSocket server started listening')
 });
 
+// Store the number of listeners for each recepientId,
+// in order to unsub from the channel when there's no listeners left on it
+const listenerCounts = {};
+
 wss.on('connection', (socket, request) => {
 
     // Get token from query string
@@ -25,19 +29,25 @@ wss.on('connection', (socket, request) => {
     // TODO we should infer user ID from the token, but for now token is the ID
     const recipientId = token;
 
-    // Subscribe to updates for the user in redis
-    redis.subscribe(recipientId, (err, count) => {
-        if (!err) {
-            console.log(`Subscribed UserID ${recipientId}`);
-        }
-    });
+    if (!listenerCounts[recipientId]) {    // If undefined OR == 0
+        // Subscribe to updates for the user in redis
+        redis.subscribe(recipientId, (err, count) => {
+            if (!err) {
+                console.debug(`Subscribed UserID ${recipientId}`);
+            }
+        });
+    }
 
     const handleMessage = (channel, message) => {
-        console.log("Receive message %s from channel %s", message, channel);
+        // TODO fix check for recepientID
+        console.debug("Receive message %s from channel %s", message, channel);
         socket.send(message);
     };
 
     redis.on("message", handleMessage);
+
+    listenerCounts[recipientId] = listenerCounts[recipientId] + 1 || 1;
+    console.debug(`Added listener for channel #${recipientId}, total # of listeners: ${listenerCounts[recipientId]}`);
 
     socket.on('message', (data) => {
         // TODO handle
@@ -50,10 +60,17 @@ wss.on('connection', (socket, request) => {
     });
 
     socket.on('close', (code, reason) => {
-        // TODO handle
-        console.log(`Connection closed: [${code}] ${reason}`);
+        console.debug(`Connection closed with recipient #${recipientId}: reason: [${code}] ${reason}`);
+
         redis.removeListener('message', handleMessage);
-        redis.unsubscribe(recipientId);
+        listenerCounts[recipientId] -= 1;
+        console.debug(`Removed listener for channel #${recipientId}, total # of listeners: ${listenerCounts[recipientId]}`);
+
+        if (listenerCounts[recipientId] === 0) {
+            delete listenerCounts[recipientId];
+            redis.unsubscribe(recipientId);
+            console.debug(`Unsubscribed from channel #${recipientId}`)
+        }
     })
 
     // TODO add heartbeats
